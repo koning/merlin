@@ -6,7 +6,7 @@
 #
 # LLNL-CODE-797170
 # All rights reserved.
-# This file is part of Merlin, Version: 1.4.0.
+# This file is part of Merlin, Version: 1.4.1.
 #
 # For details, see https://github.com/LLNL/merlin.
 #
@@ -88,10 +88,17 @@ class MerlinLSFScriptAdapter(SlurmScriptAdapter):
             "pre",
             "post",
             "depends",
+<<<<<<< HEAD
             "exclusive",
             "signal",
             "slurm",
             "flux",
+||||||| merged common ancestors
+            "exclusive",
+=======
+            "slurm",
+            "flux",
+>>>>>>> 10bc954570d9d5527ef2b151824c445be6fc144f
         }
 
     def get_header(self, step):
@@ -168,11 +175,19 @@ class MerlinSlurmScriptAdapter(SlurmScriptAdapter):
         """
         super(MerlinSlurmScriptAdapter, self).__init__(**kwargs)
 
+<<<<<<< HEAD
         self._cmd_flags["slurm"] = ""
         self._cmd_flags["walltime"] = "-t"
         self._cmd_flags["exclusive"] = "--exclusive"
         self._cmd_flags["bind"] = "--mpibind="
         self._cmd_flags["signal"] = "--signal="
+||||||| merged common ancestors
+        self._cmd_flags["bind"] = "--mpibind"
+        self._cmd_flags["exclusive"] = "--exclusive"
+=======
+        self._cmd_flags["slurm"] = ""
+        self._cmd_flags["walltime"] = "-t"
+>>>>>>> 10bc954570d9d5527ef2b151824c445be6fc144f
 
         new_unsupported = [
             "task_queue",
@@ -182,8 +197,15 @@ class MerlinSlurmScriptAdapter(SlurmScriptAdapter):
             "gpus per task",
             "gpus",
             "restart",
+<<<<<<< HEAD
             "lsf",
             "flux",
+||||||| merged common ancestors
+=======
+            "bind",
+            "lsf",
+            "flux",
+>>>>>>> 10bc954570d9d5527ef2b151824c445be6fc144f
         ]
         self._unsupported = set(list(self._unsupported) + new_unsupported)
 
@@ -315,10 +337,17 @@ class MerlinFluxScriptAdapter(MerlinSlurmScriptAdapter):
             "post",
             "depends",
             "bind",
+<<<<<<< HEAD
             "exclusive",
             "signal",
             "lsf",
             "slurm",
+||||||| merged common ancestors
+            "exclusive",
+=======
+            "lsf",
+            "slurm",
+>>>>>>> 10bc954570d9d5527ef2b151824c445be6fc144f
         ]
         self._unsupported = set(new_unsupported)
 
