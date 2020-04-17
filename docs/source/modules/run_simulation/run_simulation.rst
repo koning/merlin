@@ -161,6 +161,9 @@ the number of samples generated so we'll create an ``N_SAMPLES`` variable:
           OUTPUT_PATH: ./openfoam_wf_output
           SCRIPTS: $(MERLIN_INFO)/scripts
           N_SAMPLES: 10
+          # Add this variable if you are using singularity
+          CONTAINER: docker://cfdengine/openfoam
+
 
 and update the merlin block to be:
 
@@ -190,11 +193,11 @@ Our first step in our study block is concerned with making sure we have all the
 required python packages for this workflow. The specific packages are found in
 the ``requirements.txt`` file.
 
-We will also need to copy the lid driven cavity deck from the OpenFOAM docker
+We will also need to copy the lid driven cavity deck from the OpenFOAM docker or singularity
 container and adjust the write controls. This last part is scripted already for
 convenience.
 
-Locate the ``setup`` step in the study block and edit it to look like the following:
+If you are using docker, locate the ``setup`` step in the study block and edit it to look like the following:
 
 .. code-block:: yaml
 
@@ -209,6 +212,29 @@ Locate the ``setup`` step in the study block and edit it to look like the follow
 
           # Set up the cavity directory in the MERLIN_INFO directory
           source $(SCRIPTS)/cavity_setup.sh $(MERLIN_INFO)
+
+If you are using singularity, locate the ``setup`` step in the study block and edit it to look like the following:
+
+.. code-block:: yaml
+
+  study:
+    - name: setup
+      description: |
+                Installs necessary python packages and imports the cavity directory
+                from the singularity container
+      run:
+        cmd: |
+          pip install -r $(SPECROOT)/requirements.txt
+
+          echo "***** Get the Singularity Image *****"
+          cd $(SPECROOT)
+          if [ ! -e openfoam_latest.sif ]; then
+            singularity pull $(CONTAINER)
+          fi  
+
+          # Set up the cavity directory in the MERLIN_INFO directory
+          source $(SCRIPTS)/cavity_setup_singularity.sh $(MERLIN_INFO) $(CONTAINER)
+
 
 This step does not need to be parallelized so we will assign it to lower
 concurrency (a setting that controls how many workers can be running at the same time)
@@ -230,10 +256,10 @@ Moving on to the ``sim_runs`` step, we want to:
 
   1. Copy the cavity deck from the ``MERLIN_INFO`` directory into each of the current step's subdirectories
   2. Edit the default input values (lidspeed and viscosity) in these cavity decks using the ``sed`` command
-  3. Run the simulation using the ``run_openfoam`` executable through the OpenFOAM docker container
+  3. Run the simulation using the ``run_openfoam`` executable through the OpenFOAM docker/singularity container
   4. Post-process the results (also using the ``run_openfoam`` executable)
 
-This part should look like:
+The simulation step using docker should look like:
 
 .. code-block:: yaml
 
@@ -262,6 +288,40 @@ This part should look like:
         task_queue: simqueue
 
   .. Why do we need to assign a task_queue for this step and not the rest? Do the rest all have the same queue?
+
+This same simulation step using sngularity should look like:
+
+.. code-block:: yaml
+
+  - name: sim_runs
+    description: |
+                Edits the Lidspeed and viscosity then runs OpenFOAM simulation
+                using the icoFoam solver
+    run:
+        cmd: |
+            cp -r $(MERLIN_INFO)/cavity cavity/
+            cd cavity
+
+            ## Edits default values for viscosity and lidspeed with
+            #  values specified by samples section of the merlin block
+            python $(SCRIPTS)/ofoam_replace.py -f constant/transportProperties - j '{"nu":"[0 2 -1 0 0 0 0] $(VISCOSITY)"}'
+            # The ofoam_replace script cannot yet handle the dict type objects   in the 0/U file
+            # so the runsed script is used instead.
+            #python $(SCRIPTS)/ofoam_replace.py -f 0/U -j '{"value":"uniform     ($(LID_SPEED) 0 0)"}'
+            cd 0
+            echo "s/uniform (0 0 0)/uniform ($(LID_SPEED) 0 0)/" > sedscr
+            $(SCRIPTS)/runsed U
+            cd ..
+
+            cd ..
+            cp $(SCRIPTS)/run_openfoam .
+
+            # Run the OpenFOAM container with singularity for this 
+            # unique simulation
+           singularity run -B $(pwd):/cavity -W /cavity $(CONTAINER) ./run_openfoam $(LID_SPEED)
+
+        depends: [setup]
+        task_queue: simqueue
 
 This step runs many simulations in parallel so it would run faster if we assign it
 a worker with a higher concurrency. Navigate back to the ``resources`` section in the ``merlin`` block
@@ -357,6 +417,13 @@ By the end, your ``openfoam_wf.yaml`` should look like the template version in t
 .. literalinclude:: ../../../../merlin/examples/workflows/openfoam_wf/openfoam_wf_template.yaml
    :language: yaml
    :caption: openfoam_wf_template.yaml
+
+
+The same merlin spec using singularity is given below.
+
+.. literalinclude:: ../../../../merlin/examples/workflows/openfoam_wf/openfoam_wf_singularity.yaml
+   :language: yaml
+   :caption: openfoam_wf_singularity.yaml
 
 Run the workflow
 ++++++++++++++++

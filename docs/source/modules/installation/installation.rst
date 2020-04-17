@@ -190,6 +190,43 @@ if you stop the containers with ``docker-compose down`` and restart them with
 
      docker exec my-merlin pip3 install pandas faker
 
+Singularity
++++++++++++
+
+The singularity tool is an alternative to docker and can be used to 
+provide the servers for merlin.
+In this section only the redis server will be covered, a rabbitmq server
+may be added  in the future.
+
+If you have not done so already, download the redis Singularity Image Format (sif)
+image.
+
+.. code-block:: bash
+
+   singularity pull redis.sif library://sylabs/examples/redis 
+
+
+The singularity redis server is started by running an instance.
+
+.. code-block:: bash
+
+   singularity instance start redis.sif redis
+
+This will create start a redis server onl the localhost at port 6379.
+
+.. note::
+  The singularity command may require you to run, ``sudo singularity``
+  instead of ``singularity`` for the instance start and stop. This
+  depends on your installation.
+
+When you are done with the server, you can stop it by using the command
+below. For now, leave the server running.
+
+.. code-block:: bash
+
+   singularity instance stop redis
+
+
 Configuring merlin
 ------------------
 
@@ -203,6 +240,8 @@ to create the ``app.yaml`` configuration file.
 .. code-block:: bash
 
   merlin config --broker redis
+
+.. _local_redis_config:
 
 Pip
 +++
@@ -232,6 +271,14 @@ broker and backend config definitions, to ``server: my-redis``, the port will re
 
 .. literalinclude:: ./app_docker_redis.yaml
    :language: yaml
+
+Singularity
++++++++++++
+
+The singularity server will be run on the local host, in this case the
+config is the same as the local redis server used by the pip method 
+:ref:`local_redis_config`.
+
 
 .. _Verifying installation:
 

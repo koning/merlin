@@ -13,7 +13,10 @@ __ https://www.python.org/downloads/release/python-360/
 __ https://www.gnu.org/software/make/
 __ https://gcc.gnu.org/
 
-* Install `docker`__.
+
+If docker is avilable for your system.
+
+* Install `docker`__. If you cannot install docker, see the sigularity alternative below.
 
 __ https://docs.docker.com/install/
 
@@ -28,3 +31,11 @@ __ https://docs.docker.com/install/
 .. code-block:: bash
 
     docker pull redis
+
+If docker is not available, you may want to try singularity.
+
+* Download redis image if you are using singularity (this may require sudo):
+
+.. code-block:: bash
+
+    singularity pull redis.sif library://sylabs/examples/redis
