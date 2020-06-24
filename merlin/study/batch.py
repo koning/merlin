@@ -56,7 +56,8 @@ def batch_check_parallel(spec):
     try:
         batch = spec.batch
     except AttributeError:
-        raise Exception("The batch section is required in the specification file.")
+        LOG.error("The batch section is required in the specification file.")
+        raise
 
     btype = get_yaml_var(batch, "type", "local")
     if btype != "local":
@@ -215,9 +216,14 @@ def batch_worker_launch(spec, com, nodes=None, batch=None):
     if not launchs:
         if btype == "slurm" or launcher == "slurm":
             launchs = f"srun --mpi=none -N {nodes} -n {nodes}"
+            if bank:
+                launchs += f" -A {bank}"
             if queue:
                 launchs += f" -p {queue}"
+            if walltime:
+                launchs += f" -t {walltime}"
         if launcher == "lsf":
+            # The jsrun utility does not have a time argument
             launchs = f"jsrun -a 1 -c ALL_CPUS -g ALL_GPUS --bind=none -n {nodes}"
 
     launchs += f" {launch_args}"
