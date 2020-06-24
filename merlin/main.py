@@ -177,7 +177,17 @@ def process_run(args):
         dry_run=args.dry,
         no_errors=args.no_errors,
     )
-    router.run_task_server(study, args.run_mode)
+    if not args.batch_flag:
+        router.run_task_server(study, args.run_mode)
+
+    else:
+        spec, filepath = get_merlin_spec_with_override(args)
+
+        LOG.info(f"Creating batch script from '{filepath}'")
+
+        status = router.launch_workers(
+            spec, args.worker_steps, args.worker_args, False, args.batch_flag, "", args.output_dir, args.monitor_flag)
+
 
 
 def process_restart(args):
@@ -212,12 +222,20 @@ def launch_workers(args):
     """
     if not args.worker_echo_only:
         print(banner_small)
+    elif args.batch_flag:
+        raise Exception("merlin run-workers: cannot use the --echo flag with the --batch (-b) flag")
+
     spec, filepath = get_merlin_spec_with_override(args)
+
     if not args.worker_echo_only:
-        LOG.info(f"Launching workers from '{filepath}'")
+        if not args.batch_flag:
+            LOG.info(f"Launching workers from '{filepath}'")
+        else:
+            LOG.info(f"Creating batch script from '{filepath}'")
+
     status = router.launch_workers(
-        spec, args.worker_steps, args.worker_args, args.worker_echo_only
-    )
+        spec, args.worker_steps, args.worker_args, args.worker_echo_only, args.batch_flag, None, args.output_dir, args.monitor_flag)
+
     if args.worker_echo_only:
         print(status)
     else:
@@ -411,6 +429,45 @@ def setup_argparse():
         default=False,
         help="Flag to ignore some errors for testing.",
     )
+    run.add_argument(
+        "--worker-args",
+        type=str,
+        dest="worker_args",
+        default="",
+        help="celery worker arguments in quotes (with -b).",
+    )
+    run.add_argument(
+        "--steps",
+        nargs="+",
+        type=str,
+        dest="worker_steps",
+        default=["all"],
+        help="The specific steps in the YAML file you want workers for (with -b)",
+    )
+    run.add_argument(
+        "-b",
+        "--batch",
+        action="store_true",
+        dest="batch_flag",
+        default=False,
+        help="Create a batch submission script for the given batch type and submit the script."
+    )
+    run.add_argument(
+        "-o",
+        "--output_dir",
+        type=str,
+        default=None,
+        help="Optional directory to place the batch submission script. The batch script will not be submitted with this option.\
+                            Default: $(MERLIN_INFO)",
+    )
+    run.add_argument(
+        "-m",
+        "--monitor",
+        action="store_true",
+        dest="monitor_flag",
+        default=False,
+        help="Add a merlin monitor to the batch submission script."
+    )
 
     # merlin restart
     restart = subparsers.add_parser(
@@ -474,6 +531,30 @@ def setup_argparse():
         default=None,
         help="Specify desired Merlin variable values to override those found in the specification. Space-delimited. "
         "Example: '--vars LEARN=path/to/new_learn.py EPOCHS=3'",
+    )
+    run_workers.add_argument(
+        "-b",
+        "--batch",
+        action="store_true",
+        dest="batch_flag",
+        default=False,
+        help="Create a batch submission script for the given batch type and submit the script."
+    )
+    run_workers.add_argument(
+        "-o",
+        "--output_dir",
+        type=str,
+        default=None,
+        help="Optional directory to place the batch submission script. The batch script will not be submitted with this option.\
+                            Default: .",
+    )
+    run_workers.add_argument(
+        "-m",
+        "--monitor",
+        action="store_true",
+        dest="monitor_flag",
+        default=False,
+        help="Add a merlin monitor to the batch submission script."
     )
 
     # merlin purge

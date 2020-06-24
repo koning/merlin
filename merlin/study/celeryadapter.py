@@ -40,6 +40,7 @@ from contextlib import suppress
 
 from merlin.study.batch import (
     batch_check_parallel,
+    batch_create_script,
     batch_worker_launch,
 )
 from merlin.utils import (
@@ -187,10 +188,17 @@ def get_workers_from_app():
     return [*workers]
 
 
-def start_celery_workers(spec, steps, celery_args, just_return_command):
+def start_celery_workers(spec, steps, celery_args, just_return_command, batch_flag, merlin_info_dir, output_dir, monitor_flag):
     """ Start the celery workers on the allocation
 
-    specs       Tuple of (YAMLSpecification, MerlinSpec)
+    spec (spec): The MerlinSpec
+    steps (list): The list of steps for which workers will be started/defined
+    celery_args (str): The user defined celery worker arguments
+    just_return_command (bool): A flag to return the commands as a string 
+    batch_flag (bool): A flag to submit the workers in a parallel batch script
+    merlin_info_dir: The path to the merlin info study dir.
+    output_dir (str): An optional path for the batch script output 
+    monitor_flag (bool): An optional flag to request a merlin monitor for the allocation
     ...
 
     example config:
@@ -206,7 +214,7 @@ def start_celery_workers(spec, steps, celery_args, just_return_command):
                 nodes: 1
                 machine: [hostA, hostB]
     """
-    if not just_return_command:
+    if not (just_return_command or batch_flag):
         LOG.info("Starting workers")
 
     overlap = spec.merlin["resources"]["overlap"]
@@ -316,7 +324,7 @@ def start_celery_workers(spec, steps, celery_args, just_return_command):
             found = []
             running_queues = []
 
-            if not just_return_command and not overlap:
+            if not (just_return_command or batch_flag) and not overlap:
                 running_queues.extend(get_running_queues())
             running_queues.extend(local_queues)
 
@@ -343,13 +351,16 @@ def start_celery_workers(spec, steps, celery_args, just_return_command):
                 print(worker_cmd)
                 continue
 
-            _ = subprocess.Popen(worker_cmd, **kwargs)
+            if not batch_flag:
+                _ = subprocess.Popen(worker_cmd, **kwargs)
 
             worker_list.append(worker_cmd)
 
         except Exception as e:
-            LOG.error(f"Cannot start celery workers, {e}")
-            raise
+            raise Exception(f"Cannot start celery workers, {e}")
+
+    if batch_flag:
+        batch_result = batch_create_script(spec, worker_list, merlin_info_dir, output_dir, monitor_flag)
 
     # Return a string with the worker commands for logging
     return str(worker_list)

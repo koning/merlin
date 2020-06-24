@@ -75,7 +75,7 @@ def run_task_server(study, run_mode=None):
         LOG.error("Celery is not specified as the task server!")
 
 
-def launch_workers(spec, steps, worker_args="", just_return_command=False):
+def launch_workers(spec, steps, worker_args="", just_return_command=False, batch_flag=False, merlin_info_dir=None, output_dir=None, monitor_flag=False):
     """
     Launches workers for the specified study.
 
@@ -83,10 +83,14 @@ def launch_workers(spec, steps, worker_args="", just_return_command=False):
     :param `steps`: The steps in the spec to tie the workers to
     :param `worker_args`: Optional arguments for the workers
     :param `just_return_command`: Don't execute, just return the command
+    :param `batch_flag`: Flag to create the batch script.
+    :param `merlin_info_dir`: The path to the merlin info study dir.
+    :param `output_dir`: Optional output dir for the batch script.
+    :param `monitor_flag`: Flag to add a monitor to the batch script.
     """
     if spec.merlin["resources"]["task_server"] == "celery":
         # Start workers
-        cproc = start_celery_workers(spec, steps, worker_args, just_return_command)
+        cproc = start_celery_workers(spec, steps, worker_args, just_return_command, batch_flag, merlin_info_dir, output_dir, monitor_flag)
         return cproc
     else:
         LOG.error("Celery is not specified as the task server!")

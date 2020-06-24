@@ -33,7 +33,10 @@ DESCRIPTION = {"description", "name"}
 BATCH = {
     "type",
     "bank",
+    "host",
     "queue",
+    "reservation",
+    "walltime",
     "dry_run",
     "shell",
     "flux_path",
