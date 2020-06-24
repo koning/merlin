@@ -167,6 +167,7 @@ def get_merlin_batch_variables(spec, batch):
 
     return nbatch
 
+
 def batch_worker_launch(spec, com, nodes=None, batch=None):
     """
       The configuration in the batch section of the merlin spec
