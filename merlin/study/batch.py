@@ -295,12 +295,14 @@ def adapter_factory(batch_type, kwargs):
 
 class MerlinBatch:
     def __init__(self, **kwargs):
+        print(kwargs)
         nodes = kwargs.pop("nodes", None)
         workers = kwargs.pop("workers", [])
         shell = kwargs.get("shell", "bash")
         monitor_flag= kwargs.pop("monitor_flag", False)
         self.output_dir = kwargs.pop("output_dir", None)
         self.merlin_info_dir = kwargs.pop("merlin_info_dir", None)
+        print(kwargs)
 
         batch_type = kwargs.get("type","") 
         self.mbscript = adapter_factory(batch_type, kwargs)
@@ -318,8 +320,7 @@ class MerlinBatch:
 
         self.mbscript._write_script(".", self.mstep)
 
-        print(self.mbscript.__dict__)
-        print(kwargs)
+        #print(self.mbscript.__dict__)
         #print(self.mstep.run["cmd"])
 
     def set_shell_paths(self, shell):
