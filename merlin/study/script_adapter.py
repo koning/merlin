@@ -378,7 +378,7 @@ class MerlinScriptAdapter(LocalScriptAdapter):
         variables for submission to the specified values. The 'env' parameter
         should be a dictionary of environment variables.
 
-        :param step: An instance of a StudyStep.
+        :param step: A StudyStep instance.
         :param path: Path to the script to be executed.
         :param cwd: Path to the current working directory.
         :param job_map: A map of workflow step names to their job identifiers.

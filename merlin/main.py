@@ -329,7 +329,7 @@ def process_monitor(args):
     LOG.info("Monitor: checking queues ...")
     spec, _ = get_merlin_spec_with_override(args)
     while router.check_merlin_status(args, spec):
-        LOG.info("Monitor: found tasks in queues")
+        LOG.info("Monitor: found tasks in queues/workers")
         time.sleep(args.sleep)
     LOG.info("Monitor: ... stop condition met")
 

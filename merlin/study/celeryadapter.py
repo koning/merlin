@@ -491,3 +491,37 @@ def create_celery_config(config_dir, data_file_name, data_file_path):
     from merlin.common.security import encrypt
 
     encrypt.init_key()
+
+
+def get_celery_active_tasks(worker_names):
+    """Get all active tasks from list of workers.
+
+    :param `worker_names`: the list of workers for the spec
+
+    :return: list of active tasks
+    :rtype: (list of strings)
+
+    """
+    print(f"(names={worker_names}")
+    import pickle 
+    from merlin.celery import app as current_app
+    #from kombu import serialization
+    #serialization.register_pickle()
+    #serialization.enable_insecure_serializers()
+    #serialization.register(
+    # 'pickle', pickle.dumps, pickle.loads,
+    # content_type='application/x-pickle2',
+    # content_encoding='binary',
+    #)
+
+
+    i = current_app.control.inspect(worker_names)
+    #i = app.control.inspect()
+    adict = i.active()
+    print(f"(adict={adict}")
+    atasks = []
+    if adict:
+        for worker, tasks in adict.items():
+            atasks += tasks
+
+    return atasks

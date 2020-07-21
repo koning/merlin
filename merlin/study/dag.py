@@ -167,6 +167,8 @@ class DAG:
         """
         TODO
         """
+        print(task1)
+        print(task2)
         step1 = self.step(task1)
         step2 = self.step(task2)
         return step1.needs_merlin_expansion(

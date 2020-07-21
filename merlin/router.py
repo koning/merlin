@@ -42,6 +42,7 @@ from datetime import datetime
 
 from merlin.study.celeryadapter import (
     create_celery_config,
+    get_celery_active_tasks,
     get_workers_from_app,
     purge_celery_tasks,
     query_celery_queues,
@@ -231,6 +232,42 @@ def create_config(task_server, config_dir, broker):
         LOG.error("Only celery can be configured currently.")
 
 
+def get_spec_worker_names(args, spec):
+    """
+    Function to get merlin worker names for the spec
+
+    :param `args`: parsed CLI arguments
+    :param `spec`: the parsed spec.yaml
+    """
+    worker_names = spec.get_worker_names()
+    worker_status = get_workers(args.task_server)
+    print(f"worker_names={worker_names}")
+    print(f"worker_status={worker_status}")
+
+    spec_wnames =  []
+    if worker_names and worker_status:
+        wnames = [[iws for iws in worker_status if iwn in iws] for iwn in worker_names]
+        spec_wnames = wnames[0]
+    return spec_wnames
+
+
+def get_spec_active_tasks(args, spec):
+    """Get all active tasks for a list of workers from the spec.
+
+    :param `args`: parsed CLI arguments
+    :param `spec`: the parsed spec.yaml
+
+    :return: list of active tasks
+    :rtype: (list of strings)
+
+    """
+    if args.task_server == "celery":
+        worker_names = get_spec_worker_names(args, spec)
+        return get_celery_active_tasks(worker_names)
+    else:
+        return []
+
+
 def check_merlin_status(args, spec):
     """
     Function to check merlin workers and queues to keep 
@@ -247,7 +284,9 @@ def check_merlin_status(args, spec):
         total_jobs += jobs
         total_consumers += consumers
 
+
     if total_jobs > 0 and total_consumers == 0:
+
         # Determine if any of the workers are on this allocation
         worker_names = spec.get_worker_names()
 
@@ -273,5 +312,16 @@ def check_merlin_status(args, spec):
         if count == max_count:
             LOG.error("Monitor: no workers available to process the non-empty queue")
             total_jobs = 0
+
+    # Check for workers still running tasks
+    if total_jobs == 0 and total_consumers > 0:
+        tasks = get_spec_active_tasks(args, spec)
+        print(f"(tasks={tasks}")
+        if tasks:
+            LOG.info(
+                f"Monitor: found workers with active tasks ..."
+            )
+            return len(tasks)
+
 
     return total_jobs

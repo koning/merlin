@@ -85,7 +85,7 @@ STOP_COUNTDOWN = 60
 def merlin_step(self, *args, **kwargs):
     """
     Executes a Merlin Step
-    :param args: The arguments, one of which should be an instance of Step
+    :param args: The arguments, one of which should be a reduction of a Step
     :param kwargs: The optional keyword arguments that describe adapter_config and
                    the next step in the chain, if there is one.
 
@@ -98,6 +98,7 @@ def merlin_step(self, *args, **kwargs):
     LOG.debug(f"args is {len(args)} long")
 
     for a in args:
+        print(a)
         if isinstance(a, Step):
             step = a
         else:
@@ -172,7 +173,8 @@ def merlin_step(self, *args, **kwargs):
         return result
 
     LOG.error("Failed to find step!")
-    return None
+    #return None
+    return ""
 
 
 def is_chain_expandable(chain_, labels):
@@ -181,12 +183,15 @@ def is_chain_expandable(chain_, labels):
     A chain_ is expandable if all the steps are expandable.
     It is not expandable if none of the steps are expandable.
     If neither expandable nor not expandable, we raise an InvalidChainException.
-    :param chain_: A list of Step objects representing chain of dependent steps.
+    :param chain_: A list of Step configs representing chain of dependent steps.
     :param labels: The labels
 
     """
 
-    array_of_bools = [step.needs_merlin_expansion(labels) for step in chain_]
+    for step in chain_:
+        LOG.debug("Step=",Step(step))
+    
+    array_of_bools = [Step(step).needs_merlin_expansion(labels) for step in chain_]
 
     needs_expansion = all(array_of_bools)
 
@@ -339,7 +344,7 @@ def add_simple_chain_to_chord(self, task_type, chain_, adapter_config):
         # a given sample.
 
         new_steps = [
-            task_type.s(step, adapter_config=adapter_config).set(
+            task_type.s(step.__reduce__(), adapter_config=adapter_config).set(
                 queue=step.get_task_queue()
             )
         ]
@@ -457,6 +462,8 @@ def expand_tasks_with_samples(
         for step in steps
     ]
 
+    step_configs = [ step.__reduce__() for step in steps ]
+
     # workspaces = [step.get_workspace() for step in steps]
     # LOG.debug(f"workspaces : {workspaces}")
 
@@ -487,7 +494,7 @@ def expand_tasks_with_samples(
 
                     sig = add_merlin_expanded_chain_to_chord.s(
                         task_type,
-                        steps,
+                        step_configs,
                         samples[next_index.min : next_index.max],
                         labels,
                         next_index,
@@ -509,7 +516,7 @@ def expand_tasks_with_samples(
                     found_tasks = True
     else:
         LOG.debug(f"queuing simple chain task")
-        add_simple_chain_to_chord(self, task_type, steps, adapter_config)
+        add_simple_chain_to_chord(self, task_type, step_configs, adapter_config)
         LOG.debug(f"simple chain task queued")
 
 

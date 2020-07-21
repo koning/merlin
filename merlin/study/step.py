@@ -49,12 +49,13 @@ class Step:
     executed by calling execute.
     """
 
-    def __init__(self, maestro_step_record):
+    def __init__(self, maestro_step_record, restart=False, restart_cmd = None):
         """
         :param maestro_step_record: The StepRecord object.
         """
         self.mstep = maestro_step_record
-        self.restart = False
+        self.restart = restart
+        self.__restart = restart_cmd
 
     def get_cmd(self):
         """
@@ -100,7 +101,8 @@ class Step:
         if new_workspace is None:
             new_workspace = self.get_workspace()
         LOG.debug(f"cloned step with workspace {new_workspace}")
-        return Step(_StepRecord(new_workspace, StudyStep.from_dict(step_dict)))
+        step = Step(_StepRecord(new_workspace, StudyStep.from_dict(step_dict)))
+        return step.__reduce__()
 
     def get_task_queue(self):
         """ Retrieve the task queue for the Step."""
