@@ -6,7 +6,7 @@
 #
 # LLNL-CODE-797170
 # All rights reserved.
-# This file is part of Merlin, Version: 1.5.2.
+# This file is part of Merlin, Version: 1.7.3.
 #
 # For details, see https://github.com/LLNL/merlin.
 #
@@ -32,7 +32,9 @@ import logging
 import re
 from contextlib import suppress
 from copy import deepcopy
+from datetime import datetime
 
+from maestrowf.abstracts.enums import State
 from maestrowf.datastructures.core.executiongraph import _StepRecord
 from maestrowf.datastructures.core.study import StudyStep
 
@@ -41,6 +43,31 @@ from merlin.study.script_adapter import MerlinScriptAdapter
 
 
 LOG = logging.getLogger(__name__)
+
+
+class MerlinStepRecord(_StepRecord):
+    """
+    This classs is a wrapper for the Maestro _StepRecord to remove 
+    a re-submit message.
+    """
+
+    def __init__(self, workspace, step, **kwargs):
+        _StepRecord.__init__(self, workspace, step, **kwargs)
+
+    def mark_submitted(self):
+        """Mark the submission time of the record."""
+        LOG.debug(
+            "Marking %s as submitted (PENDING) -- previously %s", self.name, self.status
+        )
+        self.status = State.PENDING
+        if not self._submit_time:
+            self._submit_time = datetime.now()
+        else:
+            LOG.debug(
+                "Merlin: Cannot set the submission time of '%s' because it has "
+                "already been set.",
+                self.name,
+            )
 
 
 class Step:
@@ -60,13 +87,13 @@ class Step:
         """
         get the run command text body"
         """
-        return self.mstep.step.to_dict()["run"]["cmd"]
+        return self.mstep.step.__dict__["run"]["cmd"]
 
     def get_restart_cmd(self):
         """
         get the restart command text body, else return None"
         """
-        return self.mstep.step.to_dict()["run"]["restart"]
+        return self.mstep.step.__dict__["run"]["restart"]
 
     def clone_changing_workspace_and_cmd(
         self, new_cmd=None, cmd_replacement_pairs=None, new_workspace=None
@@ -81,7 +108,7 @@ class Step:
         :param new_workspace : (Optional) the workspace for the new step.
         """
         LOG.debug(f"clone called with new_workspace {new_workspace}")
-        step_dict = deepcopy(self.mstep.step.to_dict())
+        step_dict = deepcopy(self.mstep.step.__dict__)
 
         if new_cmd is not None:
             step_dict["run"]["cmd"] = new_cmd
@@ -100,11 +127,15 @@ class Step:
         if new_workspace is None:
             new_workspace = self.get_workspace()
         LOG.debug(f"cloned step with workspace {new_workspace}")
-        return Step(_StepRecord(new_workspace, StudyStep.from_dict(step_dict)))
+        study_step = StudyStep()
+        study_step.name = step_dict["name"]
+        study_step.description = step_dict["description"]
+        study_step.run = step_dict["run"]
+        return Step(MerlinStepRecord(new_workspace, study_step))
 
     def get_task_queue(self):
         """ Retrieve the task queue for the Step."""
-        return self.get_task_queue_from_dict(self.mstep.step.to_dict())
+        return self.get_task_queue_from_dict(self.mstep.step.__dict__)
 
     @staticmethod
     def get_task_queue_from_dict(step_dict):
@@ -121,7 +152,7 @@ class Step:
         """
         Returns the max number of retries for this step.
         """
-        return self.mstep.step.to_dict()["run"]["max_retries"]
+        return self.mstep.step.__dict__["run"]["max_retries"]
 
     def __get_restart(self):
         """
@@ -178,7 +209,7 @@ class Step:
         """
         :return : The step name.
         """
-        return self.mstep.step.to_dict()["name"]
+        return self.mstep.step.__dict__["name"]
 
     def execute(self, adapter_config):
         """
