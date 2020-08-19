@@ -134,7 +134,7 @@ see :doc:`./merlin_variables`.
   #   slurm: Verbatim flags only for the srun parallel launch (srun -n <nodes> -n <procs> <slurm>)
   #   FLUX specific run flags:
   #   flux: Verbatim flags for the flux parallel launch (flux mini run <flux>)
-  #   LSF specific run f1Glags:
+  #   LSF specific run flags:
   #   bind: Flag for MPI binding of tasks on a node
   #   num resource set: Number of resource sets
   #   launch_distribution : The distribution of resources (default: plane:{procs/nodes})
