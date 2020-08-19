@@ -1,3 +1,5 @@
+.. _Tutorial_hello_world:
+
 Hello, World!
 =============
 This hands-on module walks through the steps of building and running a simple merlin workflow.

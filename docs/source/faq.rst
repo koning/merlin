@@ -170,7 +170,7 @@ Steps have a ``name``, ``description``, and ``run`` field, as shown below.
     run:
         cmd: <shell command for this step>
 
-Also under ``run``, the following fields are optional:
+Also under ``run``, the following fields are optional, see also :ref:`launcher_faq`:
 
 .. code:: yaml
 
@@ -336,6 +336,8 @@ What is ``LAUNCHER``?
 ~~~~~~~~~~~~~~~~~~~~~
 ``$LAUNCHER`` is a reserved word that may be used in a step command. It serves as an abstraction to launch a job with parallel schedulers like :ref:`slurm`, :ref:`lsf`, and :ref:`flux`.
 
+.. _launcher_faq:
+
 How do I use ``LAUNCHER``?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 Instead of this:
@@ -359,23 +361,67 @@ Do something like this:
 
 The arguments the LAUNCHER syntax will use:
 
-procs: The total number of MPI tasks
-nodes: The total number of MPI nodes
-walltime: The total walltime of the run (hh:mm:ss) (not available in lsf)
-cores per task: The number of hardware threads per MPI task
-gpus per task: The number of GPUs per MPI task
+.. code:: yaml
+
+    procs: The total number of MPI tasks
+    nodes: The total number of MPI nodes
+    walltime: The total walltime of the run (hh:mm:ss) (not available in lsf)
+    cores per task: The number of hardware threads per MPI task
+    gpus per task: The number of GPUs per MPI task
+
+In addiiton to these general flags, arguments can be set for the specific 
+batch type. If the batch type is changed, these arguments will be ignored.
+Multiple specific LAUNCHER arguments can coexist in the same step.
 
 SLURM specific run flags:
-slurm: Verbatim flags only for the srun parallel launch (srun -n <nodes> -n <procs> <slurm>)
+
+.. code:: yaml
+
+    slurm: Verbatim flags only for the srun parallel launch (srun -n <nodes> -n <procs> <slurm>)
+
+    example
+
+    run:
+        cmd: $(LAUNCHER) python script.py
+        nodes: 1
+        procs: 3
+        slurm: --exclusive
+
 
 FLUX specific run flags:
-flux: Verbatim flags for the flux parallel launch (flux mini run <flux>)
+
+.. code:: yaml
+
+    flux: Verbatim flags for the flux parallel launch (flux mini run <flux>)
+
+    example
+
+    run:
+        cmd: $(LAUNCHER) python script.py
+        nodes: 1
+        procs: 3
+        flux: -o mpi=spectrum
 
 LSF specific run flags:
-bind: Flag for MPI binding of tasks on a node (default: -b rs)
-num resource set: Number of resource sets
-launch_distribution : The distribution of resources (default: plane:{procs/nodes})
-lsf: Verbatim flags only for the lsf parallel launch (jsrun ... <lsf>)
+
+.. code:: yaml
+
+    lsf: Verbatim flags only for the lsf parallel launch (jsrun ... <lsf>)
+    bind: Flag for MPI binding of tasks on a node (default: -b rs)
+    num resource set: Number of resource sets
+    launch_distribution : The distribution of resources (default: plane:{procs/nodes})
+
+    example
+
+    run:
+        cmd: $(LAUNCHER) python script.py
+        nodes: 1
+        procs: 3
+        lsf: -m 50
+
+How do I  add ``LAUNCHER`` specific arguments?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+See the `SLURM`, `FLUX` and `LSF` sections of the :ref:`launcher_faq` entry.
 
 What is level_max_dirs?
 ~~~~~~~~~~~~~~~~~~~~~~~

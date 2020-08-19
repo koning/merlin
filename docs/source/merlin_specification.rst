@@ -7,6 +7,10 @@ annotated version is given below.
 .. note:: The Merlin input file is a yaml file and must adhere to yaml
     syntax. The yaml spec relies on the indentation in the file.
 
+The description below contains a specification yaml file with all of the 
+possible variables described.
+Section descriptions can be found here: :ref:`Tutorial_hello_world` and :ref:`Tutorial_run_sim` .
+
 The input file can take a number of variables, beyond the examples shown here.
 For a complete list and descriptions of the variables,
 see :doc:`./merlin_variables`.
@@ -130,7 +134,7 @@ see :doc:`./merlin_variables`.
   #   slurm: Verbatim flags only for the srun parallel launch (srun -n <nodes> -n <procs> <slurm>)
   #   FLUX specific run flags:
   #   flux: Verbatim flags for the flux parallel launch (flux mini run <flux>)
-  #   LSF specific run flags:
+  #   LSF specific run f1Glags:
   #   bind: Flag for MPI binding of tasks on a node
   #   num resource set: Number of resource sets
   #   launch_distribution : The distribution of resources (default: plane:{procs/nodes})

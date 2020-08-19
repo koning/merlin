@@ -74,13 +74,24 @@ def get_batch_type(default=None):
     if default is None:
         default = "slurm"
 
+    if "MERLIN_BATCH_TYPE" in os.environ:
+        return os.environ["MERLIN_BATCH_TYPE"]
+
+    # This is not ideal, there should be a prgrammatic way to do this
+    if os.path.isdir("/etc/slurm"):
+        return "slurm"
+    if os.path.isfile("/etc/lsf.conf"):
+        return "lsf"
+    if os.path.isdir("/etc/flux"):
+        return "flux"
+
     if "SYS_TYPE" not in os.environ:
         return default
-
-    if "toss3" in os.environ["SYS_TYPE"]:
+    elif "toss3" in os.environ["SYS_TYPE"]:
         return "slurm"
-
-    if "blueos" in os.environ["SYS_TYPE"]:
+    elif "toss4" in os.environ["SYS_TYPE"]:
+        return "flux"
+    elif "blueos" in os.environ["SYS_TYPE"]:
         return "lsf"
 
     return default
@@ -152,10 +163,8 @@ def batch_worker_launch(spec, com, nodes=None, batch=None):
     launch_args = get_yaml_var(batch, "launch_args", "")
     worker_launch = get_yaml_var(batch, "worker_launch", "")
 
-    if btype == "flux":
-        launcher = get_batch_type()
-    else:
-        launcher = get_batch_type()
+    launcher = get_batch_type()
+
 
     launchs = worker_launch
     if not launchs:
@@ -167,9 +176,12 @@ def batch_worker_launch(spec, com, nodes=None, batch=None):
                 launchs += f" -p {queue}"
             if walltime:
                 launchs += f" -t {walltime}"
-        if launcher == "lsf":
+        elif launcher == "lsf":
             # The jsrun utility does not have a time argument
             launchs = f"jsrun -a 1 -c ALL_CPUS -g ALL_GPUS --bind=none -n {nodes}"
+        elif btype!="flux":
+            LOG.error(f"The batch type, {launcher}, is not suppoprted.")
+            raise Exception(f"The batch type, {launcher}, is not suppoprted.")
 
     launchs += f" {launch_args}"
 

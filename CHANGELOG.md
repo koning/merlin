@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- The batch type can be overriden by setting the MERLIN_BATCH_TYPE environment variable.
+- The default batch system will be queried when flux is used on a non-flux default scheduler system.
+
 ### Fixed
 - Users will no longer see the message, "Cannot set the submission time of '<step name>'
   because it has already been set", when tasks are restarted.
